@@ -136,3 +136,19 @@ def aggregate_data(df, group_var, num_stats = ['mean', 'sum'], factors = None, v
     agg_df = agg_df.reset_index()
     print("- Final dimensions:", agg_df.shape)
     return agg_df
+
+import pandas as pd
+def target_enconding(train, test, val, feature, target_feature, alpha=.0):
+        name = "__".join(["target", str(feature), str(target_feature)])
+
+        average_values = np.mean(train[target_feature])
+        samples = train.groupby(feature).size().to_frame("samples_number").reset_index()
+        average_class_values = train.groupby(feature).mean()[target_feature].to_frame(name).reset_index()
+        average_class_values[name] = (average_class_values[name]*samples["samples_number"] + \
+                                      alpha*average_values)/(samples["samples_number"]+alpha)
+        
+        train = pd.merge(train, average_class_values, how="left", on=feature)
+        val   = pd.merge(val, average_class_values, how="left", on=feature)
+        test  = pd.merge(test, average_class_values, how="left", on=feature)
+        
+        return train, val, test
